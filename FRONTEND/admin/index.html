@@ -1,0 +1,4198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduSync | Admin Portal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3f37c9;
+      --bg-dark: #0a0a0a;
+      --bg-light: #1a1a1a;
+      --glass-bg: rgba(30, 30, 30, 0.6);
+      --glass-bg-light: rgba(255, 255, 255, 0.1);
+      --glass-blur: blur(10px);
+      --text: #ffffff;
+      --text-light: #b0b0b0;
+      --sidebar-width: 250px;
+      --transition-speed: 0.3s;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      transition: margin-left var(--transition-speed);
+    }
+
+    .topbar {
+      background-color: var(--bg-light);
+      padding: 10px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .topbar h2 {
+      color: var(--primary);
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .sidebar-toggle {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-size: 1.5rem;
+      cursor: pointer;
+      margin-right: 20px;
+      transition: transform var(--transition-speed);
+    }
+
+    .sidebar-toggle:hover {
+      transform: scale(1.1);
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-light);
+      height: 100vh;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      padding-top: 20px;
+      transition: transform var(--transition-speed);
+      z-index: 999;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px;
+      color: var(--text);
+      text-decoration: none;
+      transition: all var(--transition-speed);
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar a.active,
+    .sidebar a:hover {
+      background: linear-gradient(to right, var(--primary), var(--primary-dark));
+      color: white;
+      border-left: 0px solid white;
+      border-top-right-radius: 13px;
+      border-bottom-right-radius: 13px;
+    }
+
+    .content {
+      margin-left: calc(var(--sidebar-width) + 20px);
+      margin-top: 80px;
+      padding: 30px;
+      transition: margin-left var(--transition-speed);
+    }
+
+    .content.expanded {
+      margin-left: 20px;
+    }
+
+    .kpi-card {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 15px;
+      color: var(--text);
+      margin-bottom: 20px;
+      transition: transform 0.3s ease, background 0.3s;
+      height: 100%;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-5px);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+    }
+
+    canvas {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border-radius: 15px;
+      padding: 15px;
+    }
+
+    .d-none {
+      display: none !important;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .data-table th {
+      background-color: rgba(67, 97, 238, 0.1);
+      color: var(--primary);
+      position: sticky;
+      top: 20px;
+    }
+
+    .data-table tr:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .badge {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .badge-success {
+      background-color: #00b894;
+    }
+
+    .badge-warning {
+      background-color: #fdcb6e;
+      color: #000;
+    }
+
+    .badge-danger {
+      background-color: #e63946;
+    }
+
+    .badge-info {
+      background-color: #0984e3;
+    }
+
+    .search-bar {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 10px 15px 10px 40px;
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      border-radius: 8px;
+      color: var(--text);
+      transition: all var(--transition-speed);
+    }
+
+    .search-bar input:focus {
+      outline: none;
+      border: 1px solid var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    .search-bar i {
+      position: absolute;
+      left: 15px;
+      top: 12px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .pagination {
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .page-item.active .page-link {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: #000;
+    }
+
+    .page-link {
+      background-color: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      transition: all var(--transition-speed);
+    }
+
+    .page-link:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 15px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--text);
+      transition: all var(--transition-speed);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      border-color: #000;
+      color: #000;
+      font-weight: 500;
+      transition: all var(--transition-speed);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      border-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn-outline-light {
+      transition: all var(--transition-speed);
+    }
+
+    .btn-outline-light:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+    }
+
+    .overlay-form {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      backdrop-filter: blur(12px);
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all var(--transition-speed);
+    }
+
+    .overlay-form.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .form-container {
+      background: var(--bg-light);
+      backdrop-filter: var(--glass-blur);
+      padding: 30px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 500px;
+      color: var(--text);
+      box-shadow: 0 0 30px rgba(67, 97, 238, 0.2);
+      transform: translateY(20px);
+      transition: all var(--transition-speed);
+    }
+
+    .overlay-form.show .form-container {
+      transform: translateY(0);
+    }
+
+    .form-container h3 {
+      color: var(--primary);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .form-container input,
+    .form-container select,
+    .form-container textarea {
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--text);
+      transition: all var(--transition-speed);
+    }
+
+    .form-container input:focus,
+    .form-container select:focus,
+    .form-container textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-weight: bold;
+      transition: all var(--transition-speed);
+    }
+
+    .user-profile:hover .user-avatar {
+      transform: scale(1.1);
+    }
+
+    .course-card {
+      background: var(--glass-bg);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: all var(--transition-speed);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .course-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .course-img {
+      height: 150px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+
+    .course-img .badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+
+    .course-body {
+      padding: 15px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .progress {
+      height: 5px;
+      background-color: rgba(255, 255, 255, 0.1);
+      margin-top: 10px;
+      border-radius: 3px;
+    }
+
+    .progress-bar {
+      background-color: var(--primary);
+      border-radius: 3px;
+    }
+
+    .stats-card {
+      background: var(--glass-bg);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      height: 100%;
+    }
+
+    .stats-card h3 {
+      color: var(--primary);
+      font-size: 2rem;
+      margin: 10px 0;
+    }
+
+    .stats-card p {
+      opacity: 0.8;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: #e63946;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+    }
+
+    .notification-icon {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .notification-dropdown {
+      position: absolute;
+      right: 0;
+      top: 40px;
+      background: var(--bg-light);
+      border-radius: 8px;
+      width: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      display: none;
+    }
+
+    .notification-dropdown.show {
+      display: block;
+    }
+
+    .notification-item {
+      padding: 12px 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background var(--transition-speed);
+    }
+
+    .notification-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .notification-item.unread {
+      background: rgba(67, 97, 238, 0.1);
+    }
+
+    .notification-item small {
+      display: block;
+      opacity: 0.7;
+      margin-top: 5px;
+    }
+
+    .user-dropdown {
+      position: absolute;
+      right: 0;
+      top: 50px;
+      background: var(--bg-light);
+      border-radius: 8px;
+      width: 200px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      display: none;
+    }
+
+    .user-dropdown.show {
+      display: block;
+    }
+
+    .user-dropdown a {
+      display: block;
+      padding: 10px 15px;
+      color: var(--text);
+      text-decoration: none;
+      transition: background var(--transition-speed);
+    }
+
+    .user-dropdown a:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--primary);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 2rem;
+      height: 2rem;
+      vertical-align: text-bottom;
+      border: 0.25em solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spinner-border .75s linear infinite;
+      color: var(--primary);
+    }
+
+    @keyframes spinner-border {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 3000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .loading-text {
+      margin-top: 15px;
+      color: var(--primary);
+    }
+
+    .error-message {
+      color: var(--danger);
+      font-size: 0.9rem;
+      margin-top: 5px;
+    }
+
+    .success-message {
+      color: var(--primary);
+      font-size: 0.9rem;
+      margin-top: 5px;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar select {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .export-btn {
+      margin-left: auto;
+    }
+
+    .tab-content {
+      padding: 20px 0;
+    }
+
+    .nav-tabs .nav-link {
+      color: rgba(255, 255, 255, 0.7);
+      border: none;
+      padding: 10px 20px;
+    }
+
+    .nav-tabs .nav-link.active {
+      color: var(--primary);
+      background: transparent;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    .nav-tabs .nav-link:hover {
+      color: white;
+      border-color: transparent;
+    }
+
+    .audit-log {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .audit-log-item {
+      padding: 10px 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .audit-log-item small {
+      opacity: 0.7;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-size: 1.2rem;
+      cursor: pointer;
+      margin-left: 15px;
+    }
+
+    .light-theme {
+      --bg-dark: #f5f6fa;
+      --bg-light: #ffffff;
+      --glass-bg: #ffffff;
+      --glass-bg-light: rgba(0, 0, 0, 0.05);
+      --text: #22223b;
+      --text-light: #414346;
+      color: var(--text);
+    }
+
+    .light-theme .sidebar a {
+      color: var(--text);
+    }
+
+    .light-theme .data-table th,
+    .light-theme .form-group label {
+      color: var(--primary);
+    }
+
+    .light-theme .kpi-card,
+    .light-theme canvas {
+      background: rgba(12, 12, 13, 0.1);
+    }
+
+    .light-theme .topbar,
+    .light-theme .sidebar {
+      background-color: var(--bg-light);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .light-theme .form-container {
+      background: var(--bg-light);
+    }
+
+    .light-theme .search-bar input,
+    .light-theme .form-control {
+      background: rgba(0, 0, 0, 0.05);
+      color: var(--text);
+    }
+
+    .light-theme .data-table tr:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 3000;
+    }
+
+    .toast {
+      background: var(--bg-light);
+      color: var(--text);
+      border-left: 4px solid var(--primary);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .toast-header {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--primary);
+    }
+
+    .tooltip-inner {
+      background: var(--bg-light);
+      color: var(--text);
+    }
+
+    .bs-tooltip-auto[data-popper-placement^=top] .tooltip-arrow::before,
+    .bs-tooltip-top .tooltip-arrow::before {
+      border-top-color: var(--bg-light);
+    }
+
+    .bs-tooltip-auto[data-popper-placement^=right] .tooltip-arrow::before,
+    .bs-tooltip-right .tooltip-arrow::before {
+      border-right-color: var(--bg-light);
+    }
+
+    .bs-tooltip-auto[data-popper-placement^=bottom] .tooltip-arrow::before,
+    .bs-tooltip-bottom .tooltip-arrow::before {
+      border-bottom-color: var(--bg-light);
+    }
+
+    .bs-tooltip-auto[data-popper-placement^=left] .tooltip-arrow::before,
+    .bs-tooltip-left .tooltip-arrow::before {
+      border-left-color: var(--bg-light);
+    }
+
+    .dropdown-menu {
+      background: var(--bg-light);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dropdown-item {
+      color: var(--text);
+    }
+
+    .dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--primary);
+    }
+
+    .dropdown-divider {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-content {
+      background: var(--bg-light);
+      color: var(--text);
+    }
+
+    .modal-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .close {
+      color: var(--text);
+      text-shadow: none;
+      opacity: 0.7;
+    }
+
+    .close:hover {
+      color: var(--primary);
+      opacity: 1;
+    }
+
+    .custom-file-label {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .custom-file-label::after {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .custom-range::-webkit-slider-thumb {
+      background: var(--primary);
+    }
+
+    .custom-range::-moz-range-thumb {
+      background: var(--primary);
+    }
+
+    .custom-range::-ms-thumb {
+      background: var(--primary);
+    }
+
+    .custom-control-label::before {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .custom-control-input:checked~.custom-control-label::before {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .custom-switch .custom-control-label::after {
+      background-color: white;
+    }
+
+    .custom-select {
+      background: rgba(255, 255, 255, 0.08) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='4' height='5' viewBox='0 0 4 5'%3e%3cpath fill='%23ffffff' d='M2 0L0 2h4zm0 5L0 3h4z'/%3e%3c/svg%3e") no-repeat right 0.75rem center/8px 10px;
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .custom-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 255, 157, 0.2);
+    }
+
+    .input-group-text {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .input-group>.custom-select:not(:first-child),
+    .input-group>.form-control:not(:first-child) {
+      border-left: 0;
+    }
+
+    .input-group>.custom-select:not(:last-child),
+    .input-group>.form-control:not(:last-child) {
+      border-right: 0;
+    }
+
+    .custom-checkbox .custom-control-input:indeterminate~.custom-control-label::before {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+
+<body class="light-theme">
+  <!-- Top Navigation Bar -->
+  <div class="topbar">
+    <div class="d-flex align-items-center">
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+      </button>
+      <h2>EduSync Admin</h2>
+    </div>
+    <div class="d-flex align-items-center">
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <i class="bi bi-sun-fill"></i>
+      </button>
+      <div class="notification-icon me-3" onclick="toggleNotifications()">
+        <i class="bi bi-bell-fill" style="font-size: 1.2rem;"></i>
+        <span class="notification-badge">3</span>
+        <div class="notification-dropdown" id="notificationDropdown">
+          <div class="notification-item unread">
+            <strong>New Enrollment</strong>
+            <p>Rahul Sharma enrolled in Python Course</p>
+            <small>2 hours ago</small>
+          </div>
+          <div class="notification-item unread">
+            <strong>Payment Received</strong>
+            <p>₹12,500 from Priya Patel</p>
+            <small>5 hours ago</small>
+          </div>
+          <div class="notification-item">
+            <strong>System Update</strong>
+            <p>Platform upgraded to v2.3.1</p>
+            <small>3 days ago</small>
+          </div>
+          <div class="notification-item text-center">
+            <a href="#" style="color: var(--primary);">View All Notifications</a>
+          </div>
+        </div>
+      </div>
+      <div class="user-profile" onclick="toggleUserDropdown()">
+        <div class="user-avatar">AD</div>
+        <span>Admin</span>
+        <div class="user-dropdown" id="userDropdown">
+          <a href="#"><i class="bi bi-person me-2"></i> Profile</a>
+          <a href="#"><i class="bi bi-gear me-2"></i> Settings</a>
+          <div class="dropdown-divider"></div>
+          <a href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <a href="#" onclick="switchPage('dashboardPage', this)" class="active"><i class="bi bi-speedometer2"></i>
+      Dashboard</a>
+    <a href="#" onclick="switchPage('coursesPage', this)"><i class="bi bi-book"></i> Courses</a>
+    <a href="#" onclick="switchPage('studentsPage', this)"><i class="bi bi-people"></i> Students</a>
+    <a href="#" onclick="switchPage('instructorsPage', this)"><i class="bi bi-person-badge"></i> Instructors</a>
+    <a href="#" onclick="switchPage('analyticsPage', this)"><i class="bi bi-graph-up"></i> Analytics</a>
+    <a href="#" onclick="switchPage('reportsPage', this)"><i class="bi bi-file-earmark-bar-graph"></i> Reports</a>
+    <a href="#" onclick="switchPage('testsPage', this)"><i class="bi bi-journal-check"></i> Tests</a>
+    <a href="#" onclick="switchPage('settingsPage', this)"><i class="bi bi-gear"></i> Settings</a>
+    <a href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content" id="mainContent">
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay d-none" id="loadingOverlay">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading...</div>
+    </div>
+
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="overlay-form">
+      <div class="form-container">
+        <h3>Admin Login</h3>
+        <div class="form-group">
+          <input type="text" id="loginEmail" placeholder="Email" class="form-control" />
+          <div class="error-message" id="emailError"></div>
+        </div>
+        <div class="form-group">
+          <input type="password" id="loginPassword" placeholder="Password" class="form-control" />
+          <div class="error-message" id="passwordError"></div>
+        </div>
+        <button class="btn btn-primary w-100 mt-2" onclick="login()">Login</button>
+        <div class="text-center mt-3">
+          <a href="#" style="color: var(--primary);" onclick="showForgotPassword()">Forgot Password?</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Forgot Password Overlay -->
+    <div id="forgotPasswordOverlay" class="overlay-form d-none">
+      <div class="form-container">
+        <h3>Reset Password</h3>
+        <div class="form-group">
+          <input type="email" id="resetEmail" placeholder="Enter your email" class="form-control" />
+          <div class="error-message" id="resetEmailError"></div>
+        </div>
+        <button class="btn btn-primary w-100 mt-2" onclick="resetPassword()">Send Reset Link</button>
+        <button class="btn btn-outline-light w-100 mt-2" onclick="showLogin()">Back to Login</button>
+      </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboardPage" class="d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Dashboard Overview</h3>
+        <div>
+          <select class="form-select" id="dashboardRange" style="width: 200px;" onchange="loadDashboardData()">
+            <option value="7">Last 7 Days</option>
+            <option value="30" selected>Last 30 Days</option>
+            <option value="90">Last 90 Days</option>
+            <option value="365">Last Year</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-3">
+          <div class="kpi-card" onclick="switchPage('studentsPage')" style="cursor: pointer;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="mb-1">Total Students</p>
+                <h3 id="totalStudents">14,250</h3>
+                <small class="text-success" id="studentsChange"><i class="bi bi-arrow-up"></i> 12% from last
+                  month</small>
+              </div>
+              <div class="bg-primary bg-opacity-10 p-3 rounded">
+                <i class="bi bi-people-fill" style="font-size: 1.5rem; color: var(--primary);"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="kpi-card" onclick="switchPage('instructorsPage')" style="cursor: pointer;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="mb-1">Total Instructors</p>
+                <h3 id="totalInstructors">340</h3>
+                <small class="text-success" id="instructorsChange"><i class="bi bi-arrow-up"></i> 5% from last
+                  month</small>
+              </div>
+              <div class="bg-primary bg-opacity-10 p-3 rounded">
+                <i class="bi bi-person-badge" style="font-size: 1.5rem; color: var(--primary);"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="kpi-card" onclick="switchPage('coursesPage')" style="cursor: pointer;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="mb-1">Active Courses</p>
+                <h3 id="totalCourses">1,150</h3>
+                <small class="text-success" id="coursesChange"><i class="bi bi-arrow-up"></i> 8% from last month</small>
+              </div>
+              <div class="bg-primary bg-opacity-10 p-3 rounded">
+                <i class="bi bi-book" style="font-size: 1.5rem; color: var(--primary);"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="kpi-card" onclick="switchPage('analyticsPage')" style="cursor: pointer;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="mb-1">Revenue</p>
+                <h3 id="totalRevenue">₹8,40,000</h3>
+                <small class="text-success" id="revenueChange"><i class="bi bi-arrow-up"></i> 15% from last
+                  month</small>
+              </div>
+              <div class="bg-primary bg-opacity-10 p-3 rounded">
+                <i class="bi bi-currency-rupee" style="font-size: 1.5rem; color: var(--primary);"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-8">
+          <div class="kpi-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>Revenue Overview</h5>
+              <select class="form-select" style="width: 150px;" id="revenueChartType" onchange="updateRevenueChart()">
+                <option value="line">Line Chart</option>
+                <option value="bar">Bar Chart</option>
+              </select>
+            </div>
+            <canvas id="revenueChart" height="250"></canvas>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="kpi-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>Top Categories</h5>
+              <select class="form-select" style="width: 150px;" id="categoryChartType" onchange="updateCategoryChart()">
+                <option value="pie">Pie Chart</option>
+                <option value="doughnut">Doughnut Chart</option>
+              </select>
+            </div>
+            <canvas id="categoryChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div class="kpi-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>Recent Activities</h5>
+              <button class="btn btn-sm btn-outline-light" onclick="refreshActivities()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+            <div id="activitiesList">
+              <div class="activity-item">
+                <div class="d-flex justify-content-between">
+                  <p><strong>New Enrollment:</strong> Rahul Sharma in Python Course</p>
+                  <small>2 hours ago</small>
+                </div>
+              </div>
+              <div class="activity-item mt-3">
+                <div class="d-flex justify-content-between">
+                  <p><strong>Payment Received:</strong> ₹12,500 from Priya Patel</p>
+                  <small>5 hours ago</small>
+                </div>
+              </div>
+              <div class="activity-item mt-3">
+                <div class="d-flex justify-content-between">
+                  <p><strong>New Course Added:</strong> Advanced JavaScript by Amit Kumar</p>
+                  <small>Yesterday</small>
+                </div>
+              </div>
+              <div class="activity-item mt-3">
+                <div class="d-flex justify-content-between">
+                  <p><strong>Instructor Joined:</strong> Dr. Sanjay Verma (Machine Learning Expert)</p>
+                  <small>2 days ago</small>
+                </div>
+              </div>
+              <div class="activity-item mt-3">
+                <div class="d-flex justify-content-between">
+                  <p><strong>System Update:</strong> Platform upgraded to v2.3.1</p>
+                  <small>3 days ago</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="kpi-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>Quick Stats</h5>
+              <button class="btn btn-sm btn-outline-light" onclick="refreshQuickStats()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="stats-card">
+                  <i class="bi bi-star-fill" style="font-size: 1.5rem; color: var(--primary);"></i>
+                  <h5>4.8</h5>
+                  <p>Average Rating</p>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="stats-card">
+                  <i class="bi bi-check-circle-fill" style="font-size: 1.5rem; color: var(--primary);"></i>
+                  <h5>92%</h5>
+                  <p>Completion Rate</p>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="stats-card">
+                  <i class="bi bi-people-fill" style="font-size: 1.5rem; color: var(--primary);"></i>
+                  <h5>78%</h5>
+                  <p>Active Students</p>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="stats-card">
+                  <i class="bi bi-chat-left-text-fill" style="font-size: 1.5rem; color: var(--primary);"></i>
+                  <h5>1,240</h5>
+                  <p>New Discussions</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Courses Page -->
+    <div id="coursesPage" class="d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Courses Management</h3>
+        <div>
+          <button class="btn btn-primary me-2" onclick="showAddCourseModal()">
+            <i class="bi bi-plus-circle"></i> Add Course
+          </button>
+          <button class="btn btn-outline-light" onclick="exportCourses()">
+            <i class="bi bi-download"></i> Export
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-bar" style="flex: 2;">
+          <i class="bi bi-search"></i>
+          <input type="text" id="courseSearch" placeholder="Search courses..." oninput="searchCourses()">
+        </div>
+        <select class="form-select" id="courseCategoryFilter" onchange="filterCourses()">
+          <option value="">All Categories</option>
+          <option value="Programming">Programming</option>
+          <option value="Design">Design</option>
+          <option value="Business">Business</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Other">Other</option>
+        </select>
+        <select class="form-select" id="courseStatusFilter" onchange="filterCourses()">
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Draft">Draft</option>
+          <option value="Archived">Archived</option>
+        </select>
+        <select class="form-select" id="courseSort" onchange="sortCourses()">
+          <option value="name_asc">Sort by Name (A-Z)</option>
+          <option value="name_desc">Sort by Name (Z-A)</option>
+          <option value="students_asc">Sort by Students (Low-High)</option>
+          <option value="students_desc">Sort by Students (High-Low)</option>
+          <option value="date_asc">Sort by Date (Old-New)</option>
+          <option value="date_desc">Sort by Date (New-Old)</option>
+        </select>
+      </div>
+
+      <div class="row" id="coursesContainer">
+        <!-- Courses will be loaded here dynamically -->
+      </div>
+
+      <nav aria-label="Page navigation">
+        <ul class="pagination" id="coursesPagination">
+          <!-- Pagination will be loaded here dynamically -->
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Students Page -->
+    <div id="studentsPage" class="d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Student Management</h3>
+        <div>
+          <button class="btn btn-primary me-2" onclick="showAddStudentModal()">
+            <i class="bi bi-plus-circle"></i> Add Student
+          </button>
+          <button class="btn btn-outline-light" onclick="exportStudents()">
+            <i class="bi bi-download"></i> Export
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-bar" style="flex: 2;">
+          <i class="bi bi-search"></i>
+          <input type="text" id="studentSearch" placeholder="Search students..." oninput="searchStudents()">
+        </div>
+        <select class="form-select" id="studentStatusFilter" onchange="filterStudents()">
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+          <option value="Suspended">Suspended</option>
+        </select>
+        <select class="form-select" id="studentCourseFilter" onchange="filterStudents()">
+          <option value="">All Courses</option>
+          <option value="Python">Python</option>
+          <option value="JavaScript">JavaScript</option>
+          <option value="Web Development">Web Development</option>
+        </select>
+        <select class="form-select" id="studentSort" onchange="sortStudents()">
+          <option value="name_asc">Sort by Name (A-Z)</option>
+          <option value="name_desc">Sort by Name (Z-A)</option>
+          <option value="date_asc">Sort by Date (Old-New)</option>
+          <option value="date_desc">Sort by Date (New-Old)</option>
+        </select>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Courses</th>
+              <th>Join Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody">
+            <!-- Students will be loaded here dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <nav aria-label="Page navigation">
+        <ul class="pagination" id="studentsPagination">
+          <!-- Pagination will be loaded here dynamically -->
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Instructors Page -->
+    <div id="instructorsPage" class="d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Instructor Management</h3>
+        <div>
+          <button class="btn btn-primary me-2" onclick="showAddInstructorModal()">
+            <i class="bi bi-plus-circle"></i> Add Instructor
+          </button>
+          <button class="btn btn-outline-light" onclick="exportInstructors()">
+            <i class="bi bi-download"></i> Export
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="search-bar" style="flex: 2;">
+          <i class="bi bi-search"></i>
+          <input type="text" id="instructorSearch" placeholder="Search instructors..." oninput="searchInstructors()">
+        </div>
+        <select class="form-select" id="instructorStatusFilter" onchange="filterInstructors()">
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+        <select class="form-select" id="instructorExpertiseFilter" onchange="filterInstructors()">
+          <option value="">All Expertise</option>
+          <option value="Programming">Programming</option>
+          <option value="Design">Design</option>
+          <option value="Business">Business</option>
+        </select>
+        <select class="form-select" id="instructorSort" onchange="sortInstructors()">
+          <option value="name_asc">Sort by Name (A-Z)</option>
+          <option value="name_desc">Sort by Name (Z-A)</option>
+          <option value="rating_asc">Sort by Rating (Low-High)</option>
+          <option value="rating_desc">Sort by Rating (High-Low)</option>
+        </select>
+      </div>
+
+      <div class="row" id="instructorsContainer">
+        <!-- Instructors will be loaded here dynamically -->
+      </div>
+
+      <nav aria-label="Page navigation">
+        <ul class="pagination" id="instructorsPagination">
+          <!-- Pagination will be loaded here dynamically -->
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Analytics Page -->
+    <div id="analyticsPage" class="d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Analytics Dashboard</h3>
+        <div>
+          <select class="form-select" id="analyticsRange" onchange="loadAnalyticsData()">
+            <option value="7">Last 7 Days</option>
+            <option value="30" selected>Last 30 Days</option>
+            <option value="90">Last 90 Days</option>
+            <option value="365">Last Year</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="kpi-card">
+            <h5>Enrollment Trends</h5>
+            <canvas id="enrollmentChart" height="300"></canvas>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="kpi-card">
+            <h5>Course Ratings</h5>
+            <canvas id="ratingChart" height="300"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-12">
+          <div class="kpi-card">
+            <h5>Geographic Distribution</h5>
+            <div id="mapContainer"
+              style="height: 400px; background: rgba(255,255,255,0.05); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <p class="text-muted">Map visualization would be implemented with a mapping library</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div class="kpi-card">
+            <h5>Device Usage</h5>
+            <canvas id="deviceChart" height="250"></canvas>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="kpi-card">
+            <h5>Traffic Sources</h5>
+            <canvas id="trafficChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports Page -->
+    <div id="reportsPage" class="d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Reports & Exports</h3>
+        <div>
+          <select class="form-select" id="reportType" onchange="updateReportPreview()">
+            <option value="enrollment">Enrollment Report</option>
+            <option value="revenue">Revenue Report</option>
+            <option value="completion">Completion Report</option>
+            <option value="instructor">Instructor Performance</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div class="kpi-card">
+            <h5>Report Options</h5>
+            <div class="form-group">
+              <label>Date Range</label>
+              <select class="form-select" id="reportRange">
+                <option value="7">Last 7 Days</option>
+                <option value="30" selected>Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+            <div class="form-group" id="customDateRange" style="display: none;">
+              <label>Custom Date Range</label>
+              <div class="input-group mb-2">
+                <input type="date" class="form-control" id="startDate">
+                <span class="input-group-text">to</span>
+                <input type="date" class="form-control" id="endDate">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Format</label>
+              <select class="form-select" id="reportFormat">
+                <option value="csv">CSV</option>
+                <option value="excel">Excel</option>
+                <option value="pdf">PDF</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Include</label>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="includeDetails" checked>
+                <label class="form-check-label" for="includeDetails">Detailed Data</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="includeCharts" checked>
+                <label class="form-check-label" for="includeCharts">Charts</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="includeSummary" checked>
+                <label class="form-check-label" for="includeSummary">Summary</label>
+              </div>
+            </div>
+            <button class="btn btn-primary w-100 mt-2" onclick="generateReport()">
+              <i class="bi bi-file-earmark-arrow-down"></i> Generate Report
+            </button>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="kpi-card">
+            <h5>Report Preview</h5>
+            <div id="reportPreview"
+              style="min-height: 500px; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 20px;">
+              <p class="text-center text-muted">Select report options to generate a preview</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- test page -->
+    <div id="testsPage" class="d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Test Management</h3>
+        <div>
+          <button class="btn btn-primary me-2" onclick="showAddTestModal()">
+            <i class="bi bi-plus-circle"></i> Create Test
+          </button>
+        </div>
+      </div>
+
+      <div class="row" id="testsContainer">
+        <!-- Tests will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Settings Page -->
+    <div id="settingsPage" class="d-none">
+      <h3>System Settings</h3>
+
+      <ul class="nav nav-tabs" id="settingsTabs">
+        <li class="nav-item">
+          <a class="nav-link active" data-bs-toggle="tab" href="#generalSettings">General</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" href="#paymentSettings">Payments</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" href="#notificationSettings">Notifications</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" href="#securitySettings">Security</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" href="#auditLog">Audit Log</a>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="generalSettings">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="kpi-card">
+                <h5>Platform Settings</h5>
+                <div class="form-group">
+                  <label>Platform Name</label>
+                  <input type="text" class="form-control" value="Distance Learning">
+                </div>
+                <div class="form-group">
+                  <label>Default Timezone</label>
+                  <select class="form-select">
+                    <option>UTC</option>
+                    <option selected>IST (India Standard Time)</option>
+                    <option>EST (Eastern Standard Time)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Default Language</label>
+                  <select class="form-select">
+                    <option selected>English</option>
+                    <option>Hindi</option>
+                    <option>Spanish</option>
+                    <option>French</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Maintenance Mode</label>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="maintenanceMode">
+                    <label class="form-check-label" for="maintenanceMode">Enable Maintenance Mode</label>
+                  </div>
+                </div>
+                <button class="btn btn-primary mt-2">Save Settings</button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="kpi-card">
+                <h5>Appearance</h5>
+                <div class="form-group">
+                  <label>Primary Color</label>
+                  <input type="color" class="form-control form-control-color" value="#00ff9d">
+                </div>
+                <div class="form-group">
+                  <label>Logo</label>
+                  <input type="file" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label>Favicon</label>
+                  <input type="file" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label>Default Theme</label>
+                  <select class="form-select" id="defaultTheme" onchange="changeDefaultTheme()">
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                    <option value="system">System Preference</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary mt-2">Save Appearance</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="paymentSettings">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="kpi-card">
+                <h5>Payment Gateway</h5>
+                <div class="form-group">
+                  <label>Default Gateway</label>
+                  <select class="form-select">
+                    <option>Razorpay</option>
+                    <option>PayPal</option>
+                    <option>Stripe</option>
+                    <option selected>Manual/Offline</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Currency</label>
+                  <select class="form-select">
+                    <option selected>INR (₹)</option>
+                    <option>USD ($)</option>
+                    <option>EUR (€)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Tax Rate (%)</label>
+                  <input type="number" class="form-control" value="18">
+                </div>
+                <button class="btn btn-primary mt-2">Save Payment Settings</button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="kpi-card">
+                <h5>Razorpay Configuration</h5>
+                <div class="form-group">
+                  <label>Key ID</label>
+                  <input type="text" class="form-control" placeholder="rzp_test_xxxxxxxxxxxx">
+                </div>
+                <div class="form-group">
+                  <label>Key Secret</label>
+                  <input type="password" class="form-control" placeholder="xxxxxxxxxxxxxxxxxxxx">
+                </div>
+                <div class="form-group">
+                  <label>Webhook Secret</label>
+                  <input type="password" class="form-control" placeholder="xxxxxxxxxxxxxxxxxxxx">
+                </div>
+                <div class="form-group">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="enableRazorpay">
+                    <label class="form-check-label" for="enableRazorpay">Enable Razorpay</label>
+                  </div>
+                </div>
+                <button class="btn btn-primary mt-2">Save Razorpay Settings</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="notificationSettings">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="kpi-card">
+                <h5>Email Notifications</h5>
+                <div class="form-group">
+                  <label>SMTP Host</label>
+                  <input type="text" class="form-control" value="smtp.example.com">
+                </div>
+                <div class="form-group">
+                  <label>SMTP Port</label>
+                  <input type="number" class="form-control" value="587">
+                </div>
+                <div class="form-group">
+                  <label>SMTP Username</label>
+                  <input type="text" class="form-control" value="admin@example.com">
+                </div>
+                <div class="form-group">
+                  <label>SMTP Password</label>
+                  <input type="password" class="form-control" placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                  <label>From Email</label>
+                  <input type="email" class="form-control" value="no-reply@distancelearning.com">
+                </div>
+                <div class="form-group">
+                  <label>From Name</label>
+                  <input type="text" class="form-control" value="Distance Learning">
+                </div>
+                <button class="btn btn-primary mt-2">Save Email Settings</button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="kpi-card">
+                <h5>Notification Preferences</h5>
+                <div class="form-group">
+                  <label>Admin Notifications</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="newEnrollment" checked>
+                    <label class="form-check-label" for="newEnrollment">New enrollments</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="newPayment" checked>
+                    <label class="form-check-label" for="newPayment">New payments</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="courseCompleted" checked>
+                    <label class="form-check-label" for="courseCompleted">Course completions</label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Student Notifications</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="welcomeEmail" checked>
+                    <label class="form-check-label" for="welcomeEmail">Welcome email</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="courseReminders" checked>
+                    <label class="form-check-label" for="courseReminders">Course reminders</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="certificateIssued" checked>
+                    <label class="form-check-label" for="certificateIssued">Certificate issued</label>
+                  </div>
+                </div>
+                <button class="btn btn-primary mt-2">Save Notification Settings</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="securitySettings">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="kpi-card">
+                <h5>Authentication</h5>
+                <div class="form-group">
+                  <label>Password Policy</label>
+                  <select class="form-select">
+                    <option>Basic (6 characters minimum)</option>
+                    <option selected>Standard (8 characters, 1 number)</option>
+                    <option>Strong (10 characters, mixed case, special character)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Session Timeout</label>
+                  <select class="form-select">
+                    <option>15 minutes</option>
+                    <option selected>30 minutes</option>
+                    <option>1 hour</option>
+                    <option>2 hours</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="enable2FA" checked>
+                    <label class="form-check-label" for="enable2FA">Enable Two-Factor Authentication</label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="loginAlerts" checked>
+                    <label class="form-check-label" for="loginAlerts">Send login alerts</label>
+                  </div>
+                </div>
+                <button class="btn btn-primary mt-2">Save Security Settings</button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="kpi-card">
+                <h5>API Access</h5>
+                <div class="form-group">
+                  <label>API Status</label>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="apiEnabled" checked>
+                    <label class="form-check-label" for="apiEnabled">Enable API Access</label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>API Keys</label>
+                  <div class="input-group mb-2">
+                    <input type="text" class="form-control" value="sk_live_xxxxxxxxxxxxxxxxxxxxxxxx" readonly>
+                    <button class="btn btn-outline-light" onclick="copyApiKey()">Copy</button>
+                  </div>
+                  <button class="btn btn-sm btn-outline-light">Generate New Key</button>
+                </div>
+                <div class="form-group">
+                  <label>Allowed IPs</label>
+                  <textarea class="form-control" rows="3" placeholder="Enter one IP per line">203.0.113.1
+198.51.100.42</textarea>
+                </div>
+                <button class="btn btn-primary mt-2">Save API Settings</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="auditLog">
+          <div class="kpi-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>Audit Log</h5>
+              <div>
+                <button class="btn btn-sm btn-outline-light me-2" onclick="refreshAuditLog()">
+                  <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                <button class="btn btn-sm btn-outline-light" onclick="exportAuditLog()">
+                  <i class="bi bi-download"></i> Export
+                </button>
+              </div>
+            </div>
+            <div class="audit-log">
+              <div class="audit-log-item">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong>Admin Login</strong>
+                    <p>Successful login from IP 203.0.113.1</p>
+                  </div>
+                  <small>Just now</small>
+                </div>
+              </div>
+              <div class="audit-log-item">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong>Course Updated</strong>
+                    <p>"Advanced JavaScript" course details modified</p>
+                  </div>
+                  <small>15 minutes ago</small>
+                </div>
+              </div>
+              <div class="audit-log-item">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong>Student Added</strong>
+                    <p>New student "Rahul Sharma" created</p>
+                  </div>
+                  <small>2 hours ago</small>
+                </div>
+              </div>
+              <div class="audit-log-item">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong>Settings Updated</strong>
+                    <p>Payment gateway settings changed</p>
+                  </div>
+                  <small>5 hours ago</small>
+                </div>
+              </div>
+              <div class="audit-log-item">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong>Instructor Deactivated</strong>
+                    <p>Instructor "Amit Kumar" status changed to inactive</p>
+                  </div>
+                  <small>1 day ago</small>
+                </div>
+              </div>
+              <div class="audit-log-item">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong>System Update</strong>
+                    <p>Platform upgraded to v2.3.1</p>
+                  </div>
+                  <small>3 days ago</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Course Modal -->
+    <div class="modal fade" id="addCourseModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add New Course</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="courseForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Course Title</label>
+                    <input type="text" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Category</label>
+                    <select class="form-select" required>
+                      <option value="">Select Category</option>
+                      <option>Programming</option>
+                      <option>Design</option>
+                      <option>Business</option>
+                      <option>Marketing</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Instructor</label>
+                    <select class="form-select" required>
+                      <option value="">Select Instructor</option>
+                      <option>Dr. Neha Verma</option>
+                      <option>Emily Carter</option>
+                      <option>Amit Kumar</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" class="form-control" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Course Image</label>
+                    <input type="file" class="form-control">
+                  </div>
+                  <div class="form-group">
+                    <label>Status</label>
+                    <select class="form-select" required>
+                      <option>Draft</option>
+                      <option selected>Active</option>
+                      <option>Archived</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Duration (weeks)</label>
+                    <input type="number" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Difficulty Level</label>
+                    <select class="form-select" required>
+                      <option>Beginner</option>
+                      <option selected>Intermediate</option>
+                      <option>Advanced</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <textarea class="form-control" rows="3" required></textarea>
+              </div>
+              <div class="form-group">
+                <label>Learning Outcomes</label>
+                <textarea class="form-control" rows="3" placeholder="Enter one outcome per line" required></textarea>
+              </div>
+              <div class="form-group">
+                <label>Prerequisites</label>
+                <textarea class="form-control" rows="3" placeholder="Enter one prerequisite per line"></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveCourse()">Save Course</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add New Student</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="studentForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" class="form-control" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" class="form-control" required>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Enrolled Courses</label>
+                <select class="form-select" multiple>
+                  <option>Python for Beginners</option>
+                  <option>Web Development</option>
+                  <option>Data Science</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select class="form-select" required>
+                  <option selected>Active</option>
+                  <option>Inactive</option>
+                  <option>Suspended</option>
+                </select>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveStudent()">Save Student</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Instructor Modal -->
+    <div class="modal fade" id="addInstructorModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add New Instructor</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="instructorForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" class="form-control">
+                  </div>
+                  <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Expertise</label>
+                    <select class="form-select" multiple>
+                      <option>Programming</option>
+                      <option>Design</option>
+                      <option>Business</option>
+                      <option>Marketing</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Bio</label>
+                    <textarea class="form-control" rows="3"></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Profile Picture</label>
+                <input type="file" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select class="form-select" required>
+                  <option selected>Active</option>
+                  <option>Inactive</option>
+                </select>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveInstructor()">Save Instructor</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- add test modal -->
+  <div class="modal fade" id="addTestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Create New Test</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="testForm">
+            <div class="form-group mb-3">
+              <label>Test Title</label>
+              <input type="text" class="form-control" id="testTitle" required>
+            </div>
+
+            <div class="form-group mb-3">
+              <label>Description</label>
+              <textarea class="form-control" id="testDescription" rows="2"></textarea>
+            </div>
+
+            <div class="form-group mb-3">
+              <label>Duration (minutes)</label>
+              <input type="number" class="form-control" id="testDuration" min="1" value="30">
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>Questions</h5>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="addQuestion()">
+                <i class="bi bi-plus"></i> Add Question
+              </button>
+            </div>
+
+            <div id="questionsContainer">
+              <!-- Questions will be added here -->
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveTest()">Save Test</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="addTestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Create New Test</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="testForm">
+            <div class="form-group mb-3">
+              <label>Test Title</label>
+              <input type="text" class="form-control" id="testTitle" required>
+            </div>
+
+            <div class="form-group mb-3">
+              <label>Description</label>
+              <textarea class="form-control" id="testDescription" rows="2"></textarea>
+            </div>
+
+            <div class="form-group mb-3">
+              <label>Duration (minutes)</label>
+              <input type="number" class="form-control" id="testDuration" min="1" value="30">
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>Questions</h5>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="addQuestion()">
+                <i class="bi bi-plus"></i> Add Question
+              </button>
+            </div>
+
+            <div id="questionsContainer">
+              <!-- Questions will be added here -->
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveTest()">Save Test</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Global variables
+    let currentUser = null;
+    let authToken = null;
+    let revenueChart = null;
+    let enrollmentChart = null;
+    let categoryChart = null;
+    let ratingChart = null;
+    let deviceChart = null;
+    let trafficChart = null;
+    let coursesData = [];
+    let studentsData = [];
+    let instructorsData = [];
+    let currentPage = {
+      courses: 1,
+      students: 1,
+      instructors: 1
+    };
+    const itemsPerPage = 10;
+
+    // Initialize the application when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function () {
+      // Check if user is already logged in
+      checkAuthStatus();
+
+      // Initialize Bootstrap tooltips
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+
+      // Initialize tabs
+      const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+      tabEls.forEach(tabEl => {
+        tabEl.addEventListener('shown.bs.tab', function (event) {
+          if (event.target.getAttribute('href') === '#analyticsTab') {
+            initializeCharts();
+          }
+        });
+      });
+
+      // Load sample data
+      loadSampleData();
+
+      // Set up event listeners
+      document.getElementById('reportRange').addEventListener('change', function () {
+        if (this.value === 'custom') {
+          document.getElementById('customDateRange').style.display = 'block';
+        } else {
+          document.getElementById('customDateRange').style.display = 'none';
+        }
+      });
+
+      // Initialize session timeout
+      initializeSessionTimeout();
+    });
+
+    // Authentication functions
+    function checkAuthStatus() {
+      const token = localStorage.getItem('authToken');
+
+      if (token) {
+        authToken = token;
+        verifyToken(token);
+      } else {
+        showLoginOverlay();
+      }
+    }
+
+    function verifyToken(token) {
+      // In a real app, this would verify the token with the server
+      // For demo purposes, we'll just simulate a successful verification
+      setTimeout(() => {
+        currentUser = {
+          name: 'Admin',
+          email: 'admin@distancelearning.com',
+          role: 'admin'
+        };
+        setupAuthenticatedUI();
+      }, 500);
+    }
+
+    function showLoginOverlay() {
+      document.getElementById('loginOverlay').classList.add('show');
+      document.getElementById('sidebar').classList.add('d-none');
+      document.querySelector('.user-profile').style.display = 'none';
+    }
+
+    function hideLoginOverlay() {
+      document.getElementById('loginOverlay').classList.remove('show');
+      document.getElementById('sidebar').classList.remove('d-none');
+      document.querySelector('.user-profile').style.display = 'flex';
+    }
+
+    function login() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+
+      // Clear previous errors
+      document.getElementById('emailError').textContent = '';
+      document.getElementById('passwordError').textContent = '';
+
+      // Validate inputs
+      if (!email) {
+        document.getElementById('emailError').textContent = 'Email is required';
+        return;
+      }
+
+      if (!password) {
+        document.getElementById('passwordError').textContent = 'Password is required';
+        return;
+      }
+
+      // Show loading
+      showLoading();
+
+      // Simulate API call
+      setTimeout(() => {
+        // Hardcoded credentials for demo
+        if (email === 'admin@distancelearning.com' && password === 'admin123') {
+          // Successful login
+          authToken = 'demo-auth-token';
+          currentUser = {
+            name: 'Admin',
+            email: email,
+            role: 'admin'
+          };
+
+
+          localStorage.setItem('authToken', authToken);
+
+
+          hideLoading();
+          hideLoginOverlay();
+          switchPage('dashboardPage');
+          showToast('Login successful', 'success');
+
+          // Initialize dashboard
+          loadDashboardData();
+        } else {
+          // Failed login
+          hideLoading();
+          showToast('Invalid email or password', 'error');
+        }
+      }, 1000);
+    }
+
+    function showTwoFactorAuth() {
+      document.getElementById('loginOverlay').classList.remove('show');
+      document.getElementById('twoFactorAuthOverlay').classList.add('show');
+    }
+
+    function verifyTwoFactorAuth() {
+      const authCode = document.getElementById('authCode').value;
+
+      if (!authCode || authCode.length !== 6) {
+        document.getElementById('authCodeError').textContent = 'Please enter a valid 6-digit code';
+        return;
+      }
+
+      // Simulate verification
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        if (authCode === '123456') { // Demo code
+          authToken = 'demo-auth-token';
+          currentUser = {
+            name: 'Admin',
+            email: 'admin@distancelearning.com',
+            role: 'admin'
+          };
+
+          localStorage.setItem('authToken', authToken);
+          document.getElementById('twoFactorAuthOverlay').classList.remove('show');
+          setupAuthenticatedUI();
+          switchPage('dashboardPage');
+          showToast('Two-factor authentication successful', 'success');
+        } else {
+          document.getElementById('authCodeError').textContent = 'Invalid authentication code';
+        }
+      }, 1000);
+    }
+
+    function showForgotPassword() {
+      document.getElementById('loginOverlay').classList.remove('show');
+      document.getElementById('forgotPasswordOverlay').classList.add('show');
+    }
+
+    function resetPassword() {
+      const email = document.getElementById('resetEmail').value;
+
+      if (!email) {
+        document.getElementById('resetEmailError').textContent = 'Email is required';
+        return;
+      }
+
+      // Simulate sending reset link
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        document.getElementById('resetEmailError').textContent = '';
+        showToast(`Password reset link sent to ${email}`, 'success');
+        showLogin();
+      }, 1000);
+    }
+
+    function showLogin() {
+      document.getElementById('twoFactorAuthOverlay').classList.remove('show');
+      document.getElementById('forgotPasswordOverlay').classList.remove('show');
+      document.getElementById('loginOverlay').classList.add('show');
+    }
+
+    function logout() {
+      // Clear auth data
+      authToken = null;
+      currentUser = null;
+      localStorage.removeItem('authToken');
+
+
+      // Reset UI
+      document.querySelectorAll('.content > div').forEach(div => {
+        if (!div.id.includes('Overlay')) {
+          div.classList.add('d-none');
+        }
+      });
+
+      // Clear inputs
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+
+      // Show login overlay
+      showLoginOverlay();
+
+      showToast('You have been logged out', 'info');
+    }
+
+    function setupAuthenticatedUI() {
+      // Update user profile in topbar
+      const userAvatar = document.querySelector('.user-avatar');
+      const userName = document.querySelector('.user-profile span');
+
+      if (currentUser) {
+        const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase();
+        userAvatar.textContent = initials;
+        userName.textContent = currentUser.name;
+      }
+
+      // Show dashboard by default
+      switchPage('dashboardPage');
+    }
+
+    function initializeSessionTimeout() {
+      let timeout;
+      const timeoutDuration = 30 * 60 * 1000; // 30 minutes
+
+      function resetTimer() {
+        clearTimeout(timeout);
+        timeout = setTimeout(logout, timeoutDuration);
+      }
+
+      // Reset timer on user activity
+      window.onload = resetTimer;
+      window.onmousemove = resetTimer;
+      window.onmousedown = resetTimer;
+      window.ontouchstart = resetTimer;
+      window.onclick = resetTimer;
+      window.onkeypress = resetTimer;
+
+      resetTimer();
+    }
+
+    // UI Functions
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const content = document.getElementById('mainContent');
+      sidebar.classList.toggle('collapsed');
+      content.classList.toggle('expanded');
+    }
+
+    function switchPage(pageId, linkElement) {
+      // Hide all pages
+      document.querySelectorAll('.content > div').forEach(div => {
+        if (!div.id.includes('Overlay') && !div.id.includes('Modal')) {
+          div.classList.add('d-none');
+        }
+      });
+
+      // Show selected page
+      document.getElementById(pageId).classList.remove('d-none');
+
+      // Update active link in sidebar
+      if (linkElement) {
+        document.querySelectorAll('.sidebar a').forEach(a => {
+          a.classList.remove('active');
+        });
+        linkElement.classList.add('active');
+      }
+
+      // Initialize page-specific content
+      switch (pageId) {
+        case 'dashboardPage':
+          loadDashboardData();
+          break;
+        case 'coursesPage':
+          loadCourses();
+          break;
+        case 'studentsPage':
+          loadStudents();
+          break;
+        case 'instructorsPage':
+          loadInstructors();
+          break;
+        case 'analyticsPage':
+          initializeCharts();
+          break;
+        case 'reportsPage':
+          updateReportPreview();
+          break;
+          case 'testsPage':  // Added case for tests page
+          initializeTests();
+          break;
+      }
+    }
+
+    function toggleNotifications() {
+      document.getElementById('notificationDropdown').classList.toggle('show');
+      // Close user dropdown if open
+      document.getElementById('userDropdown').classList.remove('show');
+    }
+
+    function toggleUserDropdown() {
+      document.getElementById('userDropdown').classList.toggle('show');
+      // Close notifications dropdown if open
+      document.getElementById('notificationDropdown').classList.remove('show');
+    }
+
+    function closeAllDropdowns() {
+      document.getElementById('notificationDropdown').classList.remove('show');
+      document.getElementById('userDropdown').classList.remove('show');
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function (event) {
+      if (!event.target.closest('.notification-icon') && !event.target.closest('.notification-dropdown')) {
+        document.getElementById('notificationDropdown').classList.remove('show');
+      }
+
+      if (!event.target.closest('.user-profile') && !event.target.closest('.user-dropdown')) {
+        document.getElementById('userDropdown').classList.remove('show');
+      }
+    });
+
+    function toggleTheme() {
+      document.body.classList.toggle('light-theme');
+      const themeIcon = document.querySelector('.theme-toggle i');
+
+      if (document.body.classList.contains('light-theme')) {
+        themeIcon.classList.remove('bi-moon-fill');
+        themeIcon.classList.add('bi-sun-fill');
+        localStorage.setItem('theme', 'light');
+      } else {
+        themeIcon.classList.remove('bi-sun-fill');
+        themeIcon.classList.add('bi-moon-fill');
+        localStorage.setItem('theme', 'light');
+      }
+
+      // Reinitialize charts to update their styles
+      if (revenueChart) revenueChart.destroy();
+      if (enrollmentChart) enrollmentChart.destroy();
+      if (categoryChart) categoryChart.destroy();
+      if (ratingChart) ratingChart.destroy();
+      initializeCharts();
+    }
+
+    function changeDefaultTheme() {
+      const theme = document.getElementById('defaultTheme').value;
+      if (theme === 'light') {
+        document.body.classList.add('light-theme');
+        document.querySelector('.theme-toggle i').classList.remove('bi-moon-fill');
+        document.querySelector('.theme-toggle i').classList.add('bi-sun-fill');
+      } else if (theme === 'dark') {
+        document.body.classList.remove('light-theme');
+        document.querySelector('.theme-toggle i').classList.remove('bi-sun-fill');
+        document.querySelector('.theme-toggle i').classList.add('bi-moon-fill');
+      } else {
+        // System preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          document.body.classList.add('light-theme');
+          document.querySelector('.theme-toggle i').classList.remove('bi-moon-fill');
+          document.querySelector('.theme-toggle i').classList.add('bi-sun-fill');
+        } else {
+          document.body.classList.remove('light-theme');
+          document.querySelector('.theme-toggle i').classList.remove('bi-sun-fill');
+          document.querySelector('.theme-toggle i').classList.add('bi-moon-fill');
+        }
+      }
+    }
+
+    function showLoading() {
+      document.getElementById('loadingOverlay').classList.remove('d-none');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.add('d-none');
+    }
+
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toastContainer');
+      const toastEl = document.createElement('div');
+      toastEl.className = `toast show align-items-center text-white bg-${type === 'error' ? 'danger' : type} border-0`;
+      toastEl.setAttribute('role', 'alert');
+      toastEl.setAttribute('aria-live', 'assertive');
+      toastEl.setAttribute('aria-atomic', 'true');
+
+      toastEl.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+
+      toastContainer.appendChild(toastEl);
+
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        toastEl.classList.remove('show');
+        setTimeout(() => {
+          toastEl.remove();
+        }, 300);
+      }, 5000);
+    }
+
+    // Data Loading Functions
+    function loadSampleData() {
+      // Sample courses data
+      coursesData = [
+        { id: 1, title: 'Full Stack Web Development', instructor: 'Emily Carter', category: 'Programming', students: 1200, status: 'Active', progress: 85, image: 'coding' },
+        { id: 2, title: 'Data Analysis with Python', instructor: 'Samuel Green', category: 'Programming', students: 980, status: 'Active', progress: 78, image: 'python' },
+        { id: 3, title: 'UX/UI Design Fundamentals', instructor: 'Mark Lee', category: 'Design', students: 850, status: 'Active', progress: 72, image: 'design' },
+        { id: 4, title: 'Machine Learning Basics', instructor: 'Dr. Neha Verma', category: 'Programming', students: 720, status: 'Active', progress: 65, image: 'machinelearning' },
+        { id: 5, title: 'Advanced JavaScript', instructor: 'Amit Kumar', category: 'Programming', students: 650, status: 'Active', progress: 60, image: 'javascript' },
+        { id: 6, title: 'Digital Marketing Mastery', instructor: 'Priya Sharma', category: 'Marketing', students: 580, status: 'Active', progress: 55, image: 'marketing' },
+        { id: 7, title: 'Mobile App Development', instructor: 'Rahul Mehta', category: 'Programming', students: 520, status: 'Active', progress: 50, image: 'mobile' },
+        { id: 8, title: 'Cloud Computing Basics', instructor: 'John Doe', category: 'Programming', students: 480, status: 'Active', progress: 45, image: 'cloud' },
+        { id: 9, title: 'Cybersecurity Fundamentals', instructor: 'Alice Johnson', category: 'Programming', students: 420, status: 'Active', progress: 40, image: 'security' },
+        { id: 10, title: 'Blockchain Technology', instructor: 'Sanjay Patel', category: 'Programming', students: 380, status: 'Coming Soon', progress: 30, image: 'blockchain' },
+        { id: 11, title: 'Business Analytics', instructor: 'Priya Sharma', category: 'Business', students: 350, status: 'Active', progress: 35, image: 'analytics' },
+        { id: 12, title: 'Financial Management', instructor: 'John Doe', category: 'Business', students: 320, status: 'Active', progress: 30, image: 'finance' }
+      ];
+
+      // Sample students data
+      studentsData = [
+        { id: 'S1001', name: 'Priya Sharma', email: 'priya@example.com', courses: 3, joinDate: '15 Jan 2023', status: 'Active' },
+        { id: 'S1002', name: 'Rahul Mehta', email: 'rahul@example.com', courses: 2, joinDate: '22 Feb 2023', status: 'Active' },
+        { id: 'S1003', name: 'Anjali Patel', email: 'anjali@example.com', courses: 4, joinDate: '05 Mar 2023', status: 'Active' },
+        { id: 'S1004', name: 'Vikram Singh', email: 'vikram@example.com', courses: 1, joinDate: '18 Mar 2023', status: 'Active' },
+        { id: 'S1005', name: 'Neha Gupta', email: 'neha@example.com', courses: 3, joinDate: '30 Mar 2023', status: 'Active' },
+        { id: 'S1006', name: 'Arun Kumar', email: 'arun@example.com', courses: 2, joinDate: '12 Apr 2023', status: 'Active' },
+        { id: 'S1007', name: 'Divya Nair', email: 'divya@example.com', courses: 5, joinDate: '25 Apr 2023', status: 'Active' },
+        { id: 'S1008', name: 'Sanjay Verma', email: 'sanjay@example.com', courses: 1, joinDate: '08 May 2023', status: 'Active' },
+        { id: 'S1009', name: 'Meera Joshi', email: 'meera@example.com', courses: 3, joinDate: '19 May 2023', status: 'Active' },
+        { id: 'S1010', name: 'Rohan Desai', email: 'rohan@example.com', courses: 2, joinDate: '03 Jun 2023', status: 'Inactive' },
+        { id: 'S1011', name: 'Amit Shah', email: 'amit@example.com', courses: 1, joinDate: '10 Jun 2023', status: 'Active' },
+        { id: 'S1012', name: 'Pooja Reddy', email: 'pooja@example.com', courses: 2, joinDate: '15 Jun 2023', status: 'Suspended' }
+      ];
+
+      // Sample instructors data
+      instructorsData = [
+        { id: 'I1001', name: 'Dr. Neha Verma', email: 'neha@edu.com', expertise: 'Machine Learning', courses: 5, students: 1250, rating: 4.9, status: 'Active' },
+        { id: 'I1002', name: 'Mr. Amit Ghosh', email: 'amit@edu.com', expertise: 'Web Development', courses: 3, students: 980, rating: 4.8, status: 'Active' },
+        { id: 'I1003', name: 'Emily Carter', email: 'emily@edu.com', expertise: 'Full Stack Development', courses: 4, students: 1100, rating: 4.7, status: 'Active' },
+        { id: 'I1004', name: 'Samuel Green', email: 'samuel@edu.com', expertise: 'Data Science', courses: 3, students: 850, rating: 4.6, status: 'Active' },
+        { id: 'I1005', name: 'Mark Lee', email: 'mark@edu.com', expertise: 'UX/UI Design', courses: 2, students: 720, rating: 4.8, status: 'Active' },
+        { id: 'I1006', name: 'Priya Sharma', email: 'priya@edu.com', expertise: 'Digital Marketing', courses: 3, students: 650, rating: 4.5, status: 'Active' },
+        { id: 'I1007', name: 'Rahul Mehta', email: 'rahul@edu.com', expertise: 'Mobile Development', courses: 2, students: 580, rating: 4.4, status: 'Inactive' },
+        { id: 'I1008', name: 'John Doe', email: 'john@edu.com', expertise: 'Cloud Computing', courses: 2, students: 520, rating: 4.6, status: 'Active' },
+        { id: 'I1009', name: 'Alice Johnson', email: 'alice@edu.com', expertise: 'Cybersecurity', courses: 2, students: 480, rating: 4.7, status: 'Active' },
+        { id: 'I1010', name: 'Sanjay Patel', email: 'sanjay@edu.com', expertise: 'Blockchain', courses: 1, students: 380, rating: 4.5, status: 'Active' }
+      ];
+    }
+
+    function loadDashboardData() {
+      const range = document.getElementById('dashboardRange').value;
+
+      // In a real app, this would fetch data from the server based on the selected range
+      // For demo, we'll just update the numbers with some variations
+      const baseStudents = 14250;
+      const baseInstructors = 340;
+      const baseCourses = 1150;
+      const baseRevenue = 840000;
+
+      // Simulate changes based on range
+      let studentsChange, instructorsChange, coursesChange, revenueChange;
+
+      if (range === '7') {
+        studentsChange = Math.floor(Math.random() * 5) + 1;
+        instructorsChange = Math.floor(Math.random() * 3) + 1;
+        coursesChange = Math.floor(Math.random() * 3) + 1;
+        revenueChange = Math.floor(Math.random() * 10) + 5;
+      } else if (range === '30') {
+        studentsChange = Math.floor(Math.random() * 12) + 5;
+        instructorsChange = Math.floor(Math.random() * 5) + 3;
+        coursesChange = Math.floor(Math.random() * 8) + 4;
+        revenueChange = Math.floor(Math.random() * 15) + 10;
+      } else if (range === '90') {
+        studentsChange = Math.floor(Math.random() * 25) + 10;
+        instructorsChange = Math.floor(Math.random() * 10) + 5;
+        coursesChange = Math.floor(Math.random() * 15) + 8;
+        revenueChange = Math.floor(Math.random() * 30) + 20;
+      } else { // 365
+        studentsChange = Math.floor(Math.random() * 50) + 30;
+        instructorsChange = Math.floor(Math.random() * 20) + 10;
+        coursesChange = Math.floor(Math.random() * 30) + 15;
+        revenueChange = Math.floor(Math.random() * 60) + 40;
+      }
+
+      // Update the UI
+      document.getElementById('totalStudents').textContent = (baseStudents + studentsChange * 50).toLocaleString();
+      document.getElementById('studentsChange').innerHTML = `<i class="bi bi-arrow-up"></i> ${studentsChange}% from last period`;
+
+      document.getElementById('totalInstructors').textContent = baseInstructors + instructorsChange;
+      document.getElementById('instructorsChange').innerHTML = `<i class="bi bi-arrow-up"></i> ${instructorsChange}% from last period`;
+
+      document.getElementById('totalCourses').textContent = (baseCourses + coursesChange).toLocaleString();
+      document.getElementById('coursesChange').innerHTML = `<i class="bi bi-arrow-up"></i> ${coursesChange}% from last period`;
+
+      const revenue = baseRevenue + revenueChange * 10000;
+      document.getElementById('totalRevenue').textContent = `₹${revenue.toLocaleString()}`;
+      document.getElementById('revenueChange').innerHTML = `<i class="bi bi-arrow-up"></i> ${revenueChange}% from last period`;
+
+      // Update charts
+      updateDashboardCharts(range);
+    }
+
+    function updateDashboardCharts(range) {
+      // Generate data based on range
+      let labels, revenueData, enrollmentData;
+
+      if (range === '7') {
+        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        revenueData = [50000, 75000, 60000, 90000, 120000, 80000, 110000];
+        enrollmentData = [50, 80, 60, 100, 150, 90, 120];
+      } else if (range === '30') {
+        labels = [];
+        revenueData = [];
+        enrollmentData = [];
+
+        for (let i = 1; i <= 4; i++) {
+          labels.push(`Week ${i}`);
+          revenueData.push(Math.floor(Math.random() * 200000) + 100000);
+          enrollmentData.push(Math.floor(Math.random() * 500) + 200);
+        }
+      } else if (range === '90') {
+        labels = ['Month 1', 'Month 2', 'Month 3'];
+        revenueData = [500000, 600000, 700000];
+        enrollmentData = [1500, 1800, 2100];
+      } else { // 365
+        labels = ['Q1', 'Q2', 'Q3', 'Q4'];
+        revenueData = [1500000, 1800000, 2000000, 2200000];
+        enrollmentData = [5000, 6000, 7000, 8000];
+      }
+
+      // Update revenue chart
+      if (revenueChart) {
+        revenueChart.data.labels = labels;
+        revenueChart.data.datasets[0].data = revenueData;
+        revenueChart.update();
+      }
+
+      // Update category chart (doesn't change with range)
+      if (categoryChart) {
+        categoryChart.update();
+      }
+    }
+
+    function loadCourses() {
+      const container = document.getElementById('coursesContainer');
+      const pagination = document.getElementById('coursesPagination');
+
+      // Filter courses based on search and filters
+      const searchTerm = document.getElementById('courseSearch').value.toLowerCase();
+      const categoryFilter = document.getElementById('courseCategoryFilter').value;
+      const statusFilter = document.getElementById('courseStatusFilter').value;
+      const sortValue = document.getElementById('courseSort').value;
+
+      let filteredCourses = coursesData.filter(course => {
+        const matchesSearch = course.title.toLowerCase().includes(searchTerm) ||
+          course.instructor.toLowerCase().includes(searchTerm);
+        const matchesCategory = categoryFilter ? course.category === categoryFilter : true;
+        const matchesStatus = statusFilter ? course.status === statusFilter : true;
+
+        return matchesSearch && matchesCategory && matchesStatus;
+      });
+
+      // Sort courses
+      const [sortField, sortDirection] = sortValue.split('_');
+
+      filteredCourses.sort((a, b) => {
+        if (sortField === 'name') {
+          return sortDirection === 'asc' ?
+            a.title.localeCompare(b.title) : b.title.localeCompare(a.title);
+        } else if (sortField === 'students') {
+          return sortDirection === 'asc' ?
+            a.students - b.students : b.students - a.students;
+        } else if (sortField === 'date') {
+          // For demo, we'll just sort by ID
+          return sortDirection === 'asc' ? a.id - b.id : b.id - a.id;
+        }
+        return 0;
+      });
+
+      // Pagination
+      const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
+      const startIndex = (currentPage.courses - 1) * itemsPerPage;
+      const paginatedCourses = filteredCourses.slice(startIndex, startIndex + itemsPerPage);
+
+      // Render courses
+      container.innerHTML = '';
+
+      if (paginatedCourses.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center py-5"><h5>No courses found</h5></div>';
+      } else {
+        paginatedCourses.forEach(course => {
+          const courseCard = document.createElement('div');
+          courseCard.className = 'col-md-4 mb-4';
+
+          let badgeClass = 'badge-success';
+          if (course.status === 'Coming Soon') badgeClass = 'badge-warning';
+          else if (course.status === 'Draft') badgeClass = 'badge-info';
+          else if (course.status === 'Archived') badgeClass = 'badge-danger';
+
+          courseCard.innerHTML = `
+            <div class="course-card">
+              <div class="course-img" style="background-image: url('https://source.unsplash.com/random/300x200/?${course.image}')">
+                <span class="badge ${badgeClass}">${course.status}</span>
+              </div>
+              <div class="course-body">
+                <h5>${course.title}</h5>
+                <p class="text-muted">${course.instructor}</p>
+                <div class="d-flex justify-content-between">
+                  <span>${course.students.toLocaleString()} Students</span>
+                  <span class="badge bg-primary">${course.category}</span>
+                </div>
+                <div class="progress mt-2">
+                  <div class="progress-bar" style="width: ${course.progress}%"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-3">
+                  <button class="btn btn-sm btn-outline-light" onclick="editCourse(${course.id})">
+                    <i class="bi bi-pencil"></i> Edit
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteCourse(${course.id})">
+                    <i class="bi bi-trash"></i> Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          container.appendChild(courseCard);
+        });
+      }
+
+      // Render pagination
+      renderPagination(pagination, currentPage.courses, totalPages, 'courses');
+    }
+
+    function loadStudents() {
+      const tableBody = document.getElementById('studentsTableBody');
+      const pagination = document.getElementById('studentsPagination');
+
+      // Filter students based on search and filters
+      const searchTerm = document.getElementById('studentSearch').value.toLowerCase();
+      const statusFilter = document.getElementById('studentStatusFilter').value;
+      const courseFilter = document.getElementById('studentCourseFilter').value;
+      const sortValue = document.getElementById('studentSort').value;
+
+      let filteredStudents = studentsData.filter(student => {
+        const matchesSearch = student.name.toLowerCase().includes(searchTerm) ||
+          student.email.toLowerCase().includes(searchTerm) ||
+          student.id.toLowerCase().includes(searchTerm);
+        const matchesStatus = statusFilter ? student.status === statusFilter : true;
+        // For demo, we'll just check if the course filter is in the student's name
+        const matchesCourse = courseFilter ? student.name.includes(courseFilter) || student.email.includes(courseFilter) : true;
+
+        return matchesSearch && matchesStatus && matchesCourse;
+      });
+
+      // Sort students
+      const [sortField, sortDirection] = sortValue.split('_');
+
+      filteredStudents.sort((a, b) => {
+        if (sortField === 'name') {
+          return sortDirection === 'asc' ?
+            a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+        } else if (sortField === 'date') {
+          // For demo, we'll just sort by ID
+          return sortDirection === 'asc' ?
+            a.id.localeCompare(b.id) : b.id.localeCompare(a.id);
+        }
+        return 0;
+      });
+
+      // Pagination
+      const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+      const startIndex = (currentPage.students - 1) * itemsPerPage;
+      const paginatedStudents = filteredStudents.slice(startIndex, startIndex + itemsPerPage);
+
+      // Render students
+      tableBody.innerHTML = '';
+
+      if (paginatedStudents.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><h5>No students found</h5></td></tr>';
+      } else {
+        paginatedStudents.forEach(student => {
+          let badgeClass = 'badge-success';
+          if (student.status === 'Inactive') badgeClass = 'badge-warning';
+          else if (student.status === 'Suspended') badgeClass = 'badge-danger';
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${student.id}</td>
+            <td>${student.name}</td>
+            <td>${student.email}</td>
+            <td>${student.courses}</td>
+            <td>${student.joinDate}</td>
+            <td><span class="badge ${badgeClass}">${student.status}</span></td>
+            <td>
+              <button class="btn btn-sm btn-outline-light" onclick="editStudent('${student.id}')">
+                <i class="bi bi-pencil"></i> Edit
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${student.id}')">
+                <i class="bi bi-trash"></i> Delete
+              </button>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Render pagination
+      renderPagination(pagination, currentPage.students, totalPages, 'students');
+    }
+
+    function loadInstructors() {
+      const container = document.getElementById('instructorsContainer');
+      const pagination = document.getElementById('instructorsPagination');
+
+      // Filter instructors based on search and filters
+      const searchTerm = document.getElementById('instructorSearch').value.toLowerCase();
+      const statusFilter = document.getElementById('instructorStatusFilter').value;
+      const expertiseFilter = document.getElementById('instructorExpertiseFilter').value;
+      const sortValue = document.getElementById('instructorSort').value;
+
+      let filteredInstructors = instructorsData.filter(instructor => {
+        const matchesSearch = instructor.name.toLowerCase().includes(searchTerm) ||
+          instructor.email.toLowerCase().includes(searchTerm) ||
+          instructor.id.toLowerCase().includes(searchTerm);
+        const matchesStatus = statusFilter ? instructor.status === statusFilter : true;
+        const matchesExpertise = expertiseFilter ? instructor.expertise.includes(expertiseFilter) : true;
+
+        return matchesSearch && matchesStatus && matchesExpertise;
+      });
+
+      // Sort instructors
+      const [sortField, sortDirection] = sortValue.split('_');
+
+      filteredInstructors.sort((a, b) => {
+        if (sortField === 'name') {
+          return sortDirection === 'asc' ?
+            a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+        } else if (sortField === 'rating') {
+          return sortDirection === 'asc' ?
+            a.rating - b.rating : b.rating - a.rating;
+        }
+        return 0;
+      });
+
+      // Pagination
+      const totalPages = Math.ceil(filteredInstructors.length / itemsPerPage);
+      const startIndex = (currentPage.instructors - 1) * itemsPerPage;
+      const paginatedInstructors = filteredInstructors.slice(startIndex, startIndex + itemsPerPage);
+
+      // Render instructors
+      container.innerHTML = '';
+
+      if (paginatedInstructors.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center py-5"><h5>No instructors found</h5></div>';
+      } else {
+        paginatedInstructors.forEach(instructor => {
+          let badgeClass = 'badge-success';
+          if (instructor.status === 'Inactive') badgeClass = 'badge-danger';
+
+          const initials = instructor.name.split(' ').map(n => n[0]).join('').toUpperCase();
+
+          const instructorCard = document.createElement('div');
+          instructorCard.className = 'col-md-4 mb-4';
+
+          instructorCard.innerHTML = `
+            <div class="kpi-card">
+              <div class="d-flex align-items-center mb-3">
+                <div class="user-avatar me-3">${initials}</div>
+                <div>
+                  <h5>${instructor.name}</h5>
+                  <p class="text-muted mb-0">${instructor.expertise}</p>
+                </div>
+              </div>
+              <p><i class="bi bi-envelope me-2"></i> ${instructor.email}</p>
+              <p><i class="bi bi-book me-2"></i> ${instructor.courses} Courses</p>
+              <p><i class="bi bi-people me-2"></i> ${instructor.students.toLocaleString()} Students</p>
+              <p><i class="bi bi-star-fill text-warning me-2"></i> ${instructor.rating} Rating</p>
+              <div class="d-flex justify-content-between mt-3">
+                <button class="btn btn-sm btn-outline-light" onclick="editInstructor('${instructor.id}')">
+                  <i class="bi bi-pencil"></i> Edit
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteInstructor('${instructor.id}')">
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          `;
+
+          container.appendChild(instructorCard);
+        });
+      }
+
+      // Render pagination
+      renderPagination(pagination, currentPage.instructors, totalPages, 'instructors');
+    }
+
+    function renderPagination(element, currentPage, totalPages, type) {
+      element.innerHTML = '';
+
+      if (totalPages <= 1) return;
+
+      // Previous button
+      const prevLi = document.createElement('li');
+      prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+      prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage('${type}', ${currentPage - 1})">Previous</a>`;
+      element.appendChild(prevLi);
+
+      // Page numbers
+      const maxVisiblePages = 5;
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+
+      if (startPage > 1) {
+        const firstLi = document.createElement('li');
+        firstLi.className = 'page-item';
+        firstLi.innerHTML = `<a class="page-link" href="#" onclick="changePage('${type}', 1)">1</a>`;
+        element.appendChild(firstLi);
+
+        if (startPage > 2) {
+          const ellipsisLi = document.createElement('li');
+          ellipsisLi.className = 'page-item disabled';
+          ellipsisLi.innerHTML = '<a class="page-link" href="#">...</a>';
+          element.appendChild(ellipsisLi);
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        const pageLi = document.createElement('li');
+        pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        pageLi.innerHTML = `<a class="page-link" href="#" onclick="changePage('${type}', ${i})">${i}</a>`;
+        element.appendChild(pageLi);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsisLi = document.createElement('li');
+          ellipsisLi.className = 'page-item disabled';
+          ellipsisLi.innerHTML = '<a class="page-link" href="#">...</a>';
+          element.appendChild(ellipsisLi);
+        }
+
+        const lastLi = document.createElement('li');
+        lastLi.className = 'page-item';
+        lastLi.innerHTML = `<a class="page-link" href="#" onclick="changePage('${type}', ${totalPages})">${totalPages}</a>`;
+        element.appendChild(lastLi);
+      }
+
+      // Next button
+      const nextLi = document.createElement('li');
+      nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+      nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage('${type}', ${currentPage + 1})">Next</a>`;
+      element.appendChild(nextLi);
+    }
+
+    function changePage(type, page) {
+      currentPage[type] = page;
+
+      switch (type) {
+        case 'courses':
+          loadCourses();
+          break;
+        case 'students':
+          loadStudents();
+          break;
+        case 'instructors':
+          loadInstructors();
+          break;
+      }
+
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function searchCourses() {
+      currentPage.courses = 1;
+      loadCourses();
+    }
+
+    function filterCourses() {
+      currentPage.courses = 1;
+      loadCourses();
+    }
+
+    function sortCourses() {
+      loadCourses();
+    }
+
+    function searchStudents() {
+      currentPage.students = 1;
+      loadStudents();
+    }
+
+    function filterStudents() {
+      currentPage.students = 1;
+      loadStudents();
+    }
+
+    function sortStudents() {
+      loadStudents();
+    }
+
+    function searchInstructors() {
+      currentPage.instructors = 1;
+      loadInstructors();
+    }
+
+    function filterInstructors() {
+      currentPage.instructors = 1;
+      loadInstructors();
+    }
+
+    function sortInstructors() {
+      loadInstructors();
+    }
+
+    function exportCourses() {
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        showToast('Courses exported successfully', 'success');
+      }, 1000);
+    }
+
+    function exportStudents() {
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        showToast('Students exported successfully', 'success');
+      }, 1000);
+    }
+
+    function exportInstructors() {
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        showToast('Instructors exported successfully', 'success');
+      }, 1000);
+    }
+
+    function loadAnalyticsData() {
+      const range = document.getElementById('analyticsRange').value;
+      updateAnalyticsCharts(range);
+    }
+
+    function updateAnalyticsCharts(range) {
+      // Generate data based on range
+      let labels, enrollmentData, ratingData, deviceData, trafficData;
+
+      if (range === '7') {
+        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        enrollmentData = [50, 80, 60, 100, 150, 90, 120];
+        ratingData = [4.7, 4.8, 4.6, 4.9, 4.8, 4.7, 4.9];
+        deviceData = [65, 25, 10]; // Desktop, Mobile, Tablet
+        trafficData = [45, 30, 15, 10]; // Organic, Direct, Social, Referral
+      } else if (range === '30') {
+        labels = [];
+        enrollmentData = [];
+        ratingData = [];
+
+        for (let i = 1; i <= 4; i++) {
+          labels.push(`Week ${i}`);
+          enrollmentData.push(Math.floor(Math.random() * 500) + 200);
+          ratingData.push(4.5 + Math.random() * 0.5);
+        }
+
+        deviceData = [60, 30, 10];
+        trafficData = [40, 35, 15, 10];
+      } else if (range === '90') {
+        labels = ['Month 1', 'Month 2', 'Month 3'];
+        enrollmentData = [1500, 1800, 2100];
+        ratingData = [4.6, 4.7, 4.8];
+        deviceData = [55, 35, 10];
+        trafficData = [35, 40, 15, 10];
+      } else { // 365
+        labels = ['Q1', 'Q2', 'Q3', 'Q4'];
+        enrollmentData = [5000, 6000, 7000, 8000];
+        ratingData = [4.5, 4.6, 4.7, 4.8];
+        deviceData = [50, 40, 10];
+        trafficData = [30, 45, 15, 10];
+      }
+
+      // Update enrollment chart
+      if (enrollmentChart) {
+        enrollmentChart.data.labels = labels;
+        enrollmentChart.data.datasets[0].data = enrollmentData;
+        enrollmentChart.update();
+      }
+
+      // Update rating chart
+      if (ratingChart) {
+        ratingChart.update();
+      }
+
+      // Update device chart
+      if (deviceChart) {
+        deviceChart.data.datasets[0].data = deviceData;
+        deviceChart.update();
+      }
+
+      // Update traffic chart
+      if (trafficChart) {
+        trafficChart.data.datasets[0].data = trafficData;
+        trafficChart.update();
+      }
+    }
+
+    function updateReportPreview() {
+      const reportType = document.getElementById('reportType').value;
+      const reportPreview = document.getElementById('reportPreview');
+
+      let previewContent = '';
+
+      switch (reportType) {
+        case 'enrollment':
+          previewContent = `
+            <h5>Enrollment Report Preview</h5>
+            <p class="text-muted">This report will show enrollment trends over the selected period.</p>
+            <div class="mt-4">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Course</th>
+                    <th>Enrollments</th>
+                    <th>Completion Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>2023-06-01</td>
+                    <td>Python for Beginners</td>
+                    <td>120</td>
+                    <td>85%</td>
+                  </tr>
+                  <tr>
+                    <td>2023-06-02</td>
+                    <td>Web Development</td>
+                    <td>95</td>
+                    <td>78%</td>
+                  </tr>
+                  <tr>
+                    <td>2023-06-03</td>
+                    <td>Data Science</td>
+                    <td>80</td>
+                    <td>72%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `;
+          break;
+        case 'revenue':
+          previewContent = `
+            <h5>Revenue Report Preview</h5>
+            <p class="text-muted">This report will show revenue details over the selected period.</p>
+            <div class="mt-4">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Course</th>
+                    <th>Payments</th>
+                    <th>Amount (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>2023-06-01</td>
+                    <td>Python for Beginners</td>
+                    <td>45</td>
+                    <td>225,000</td>
+                  </tr>
+                  <tr>
+                    <td>2023-06-02</td>
+                    <td>Web Development</td>
+                    <td>38</td>
+                    <td>190,000</td>
+                  </tr>
+                  <tr>
+                    <td>2023-06-03</td>
+                    <td>Data Science</td>
+                    <td>32</td>
+                    <td>160,000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `;
+          break;
+        case 'completion':
+          previewContent = `
+            <h5>Completion Report Preview</h5>
+            <p class="text-muted">This report will show course completion statistics.</p>
+            <div class="mt-4">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Course</th>
+                    <th>Enrollments</th>
+                    <th>Completions</th>
+                    <th>Completion Rate</th>
+                    <th>Avg. Rating</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Python for Beginners</td>
+                    <td>1,200</td>
+                    <td>1,020</td>
+                    <td>85%</td>
+                    <td>4.8</td>
+                  </tr>
+                  <tr>
+                    <td>Web Development</td>
+                    <td>980</td>
+                    <td>764</td>
+                    <td>78%</td>
+                    <td>4.7</td>
+                  </tr>
+                  <tr>
+                    <td>Data Science</td>
+                    <td>850</td>
+                    <td>612</td>
+                    <td>72%</td>
+                    <td>4.6</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `;
+          break;
+        case 'instructor':
+          previewContent = `
+            <h5>Instructor Performance Report Preview</h5>
+            <p class="text-muted">This report will show instructor performance metrics.</p>
+            <div class="mt-4">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Instructor</th>
+                    <th>Courses</th>
+                    <th>Students</th>
+                    <th>Revenue (₹)</th>
+                    <th>Avg. Rating</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Dr. Neha Verma</td>
+                    <td>5</td>
+                    <td>1,250</td>
+                    <td>2,50,000</td>
+                    <td>4.9</td>
+                  </tr>
+                  <tr>
+                    <td>Emily Carter</td>
+                    <td>4</td>
+                    <td>1,100</td>
+                    <td>2,20,000</td>
+                    <td>4.7</td>
+                  </tr>
+                  <tr>
+                    <td>Amit Kumar</td>
+                    <td>3</td>
+                    <td>850</td>
+                    <td>1,70,000</td>
+                    <td>4.6</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `;
+          break;
+      }
+
+      reportPreview.innerHTML = previewContent;
+    }
+
+    function generateReport() {
+      const reportType = document.getElementById('reportType').value;
+      const reportFormat = document.getElementById('reportFormat').value;
+
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        showToast(`Report generated and downloaded in ${reportFormat.toUpperCase()} format`, 'success');
+      }, 2000);
+    }
+
+    function refreshActivities() {
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        showToast('Activities refreshed', 'success');
+      }, 500);
+    }
+
+    function refreshQuickStats() {
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        showToast('Quick stats refreshed', 'success');
+      }, 500);
+    }
+
+    function refreshAuditLog() {
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        showToast('Audit log refreshed', 'success');
+      }, 500);
+    }
+
+    function exportAuditLog() {
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        showToast('Audit log exported successfully', 'success');
+      }, 1000);
+    }
+
+    function copyApiKey() {
+      navigator.clipboard.writeText('sk_live_xxxxxxxxxxxxxxxxxxxxxxxx');
+      showToast('API key copied to clipboard', 'success');
+    }
+
+    // CRUD Operations
+    function showAddCourseModal() {
+      const modal = new bootstrap.Modal(document.getElementById('addCourseModal'));
+      modal.show();
+    }
+
+    function saveCourse() {
+      const form = document.getElementById('courseForm');
+
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addCourseModal'));
+        modal.hide();
+        showToast('Course added successfully', 'success');
+        loadCourses();
+      }, 1000);
+    }
+
+    function editCourse(id) {
+      const course = coursesData.find(c => c.id === id);
+      if (!course) return;
+
+      const modal = new bootstrap.Modal(document.getElementById('addCourseModal'));
+      modal.show();
+
+      // In a real app, we would populate the form with course data
+      showToast(`Editing course: ${course.title}`, 'info');
+    }
+
+    function deleteCourse(id) {
+      if (confirm('Are you sure you want to delete this course?')) {
+        showLoading();
+        setTimeout(() => {
+          hideLoading();
+          showToast('Course deleted successfully', 'success');
+          loadCourses();
+        }, 1000);
+      }
+    }
+
+    function showAddStudentModal() {
+      const modal = new bootstrap.Modal(document.getElementById('addStudentModal'));
+      modal.show();
+    }
+
+    function saveStudent() {
+      const form = document.getElementById('studentForm');
+
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
+        modal.hide();
+        showToast('Student added successfully', 'success');
+        loadStudents();
+      }, 1000);
+    }
+
+    function editStudent(id) {
+      const student = studentsData.find(s => s.id === id);
+      if (!student) return;
+
+      const modal = new bootstrap.Modal(document.getElementById('addStudentModal'));
+      modal.show();
+
+      // In a real app, we would populate the form with student data
+      showToast(`Editing student: ${student.name}`, 'info');
+    }
+
+    function deleteStudent(id) {
+      if (confirm('Are you sure you want to delete this student?')) {
+        showLoading();
+        setTimeout(() => {
+          hideLoading();
+          showToast('Student deleted successfully', 'success');
+          loadStudents();
+        }, 1000);
+      }
+    }
+
+    function showAddInstructorModal() {
+      const modal = new bootstrap.Modal(document.getElementById('addInstructorModal'));
+      modal.show();
+    }
+
+    function saveInstructor() {
+      const form = document.getElementById('instructorForm');
+
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addInstructorModal'));
+        modal.hide();
+        showToast('Instructor added successfully', 'success');
+        loadInstructors();
+      }, 1000);
+    }
+
+    function editInstructor(id) {
+      const instructor = instructorsData.find(i => i.id === id);
+      if (!instructor) return;
+
+      const modal = new bootstrap.Modal(document.getElementById('addInstructorModal'));
+      modal.show();
+
+      // In a real app, we would populate the form with instructor data
+      showToast(`Editing instructor: ${instructor.name}`, 'info');
+    }
+
+    function deleteInstructor(id) {
+      if (confirm('Are you sure you want to delete this instructor?')) {
+        showLoading();
+        setTimeout(() => {
+          hideLoading();
+          showToast('Instructor deleted successfully', 'success');
+          loadInstructors();
+        }, 1000);
+      }
+    }
+
+    // Chart Functions
+    function initializeCharts() {
+      // Revenue Chart
+      const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+      revenueChart = new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Revenue (₹)',
+            data: [200000, 300000, 500000, 840000, 920000, 1100000],
+            borderColor: 'var(--primary)',
+            backgroundColor: 'rgba(0, 255, 157, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            },
+            y: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        }
+      });
+
+      // Enrollment Chart
+      const enrollmentCtx = document.getElementById('enrollmentChart').getContext('2d');
+      enrollmentChart = new Chart(enrollmentCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Enrollments',
+            data: [500, 800, 1500, 2100, 2400, 3000],
+            backgroundColor: '#0077ff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            },
+            y: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        }
+      });
+
+      // Category Chart
+      const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+      categoryChart = new Chart(categoryCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Programming', 'Design', 'Marketing', 'Business', 'Other'],
+          datasets: [{
+            label: 'Top Categories',
+            data: [40, 25, 15, 12, 8],
+            backgroundColor: [
+              'var(--primary)',
+              '#0077ff',
+              '#ff7675',
+              '#fdcb6e',
+              '#a29bfe'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        }
+      });
+
+      // Rating Chart
+      const ratingCtx = document.getElementById('ratingChart').getContext('2d');
+      ratingChart = new Chart(ratingCtx, {
+        type: 'radar',
+        data: {
+          labels: ['Content Quality', 'Instructor', 'Support', 'Value', 'Platform'],
+          datasets: [{
+            label: 'Course Ratings',
+            data: [4.8, 4.9, 4.6, 4.7, 4.8],
+            backgroundColor: 'rgba(0, 255, 157, 0.2)',
+            borderColor: 'var(--primary)',
+            pointBackgroundColor: 'var(--primary)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'var(--primary)'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            r: {
+              angleLines: {
+                display: true,
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              suggestedMin: 3,
+              suggestedMax: 5,
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              pointLabels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              },
+              ticks: {
+                backdropColor: 'transparent',
+                color: 'rgba(255, 255, 255, 0.5)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        }
+      });
+
+      // Device Chart
+      const deviceCtx = document.getElementById('deviceChart').getContext('2d');
+      deviceChart = new Chart(deviceCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Desktop', 'Mobile', 'Tablet'],
+          datasets: [{
+            label: 'Device Usage',
+            data: [65, 25, 10],
+            backgroundColor: [
+              'var(--primary)',
+              '#0077ff',
+              '#ff7675'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        }
+      });
+
+      // Traffic Chart
+      const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+      trafficChart = new Chart(trafficCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Organic', 'Direct', 'Social', 'Referral'],
+          datasets: [{
+            label: 'Traffic Sources',
+            data: [45, 30, 15, 10],
+            backgroundColor: [
+              'var(--primary)',
+              '#0077ff',
+              '#ff7675',
+              '#fdcb6e'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateRevenueChart() {
+      const chartType = document.getElementById('revenueChartType').value;
+
+      if (revenueChart) {
+        revenueChart.destroy();
+      }
+
+      const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+      revenueChart = new Chart(revenueCtx, {
+        type: chartType,
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Revenue (₹)',
+            data: [200000, 300000, 500000, 840000, 920000, 1100000],
+            borderColor: 'var(--primary)',
+            backgroundColor: chartType === 'line' ? 'rgba(0, 255, 157, 0.1)' : 'var(--primary)',
+            fill: chartType === 'line',
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            },
+            y: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateCategoryChart() {
+      const chartType = document.getElementById('categoryChartType').value;
+
+      if (categoryChart) {
+        categoryChart.destroy();
+      }
+
+      const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+      categoryChart = new Chart(categoryCtx, {
+        type: chartType,
+        data: {
+          labels: ['Programming', 'Design', 'Marketing', 'Business', 'Other'],
+          datasets: [{
+            label: 'Top Categories',
+            data: [40, 25, 15, 12, 8],
+            backgroundColor: [
+              'var(--primary)',
+              '#0077ff',
+              '#ff7675',
+              '#fdcb6e',
+              '#a29bfe'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+
+  </script>
+
+  <script>
+      // Sample test data
+      let testsData = [
+      {
+        id: 1,
+        title: "JavaScript Fundamentals",
+        description: "Test your knowledge of basic JavaScript concepts",
+        duration: 30,
+        questions: [
+          {
+            id: 1,
+            text: "Which of the following is NOT a JavaScript data type?",
+            type: "multiple",
+            options: ["String", "Boolean", "Float", "Object"],
+            correctAnswer: 2
+          },
+          {
+            id: 2,
+            text: "Explain the concept of hoisting in JavaScript.",
+            type: "text"
+          }
+        ]
+      },
+      {
+        id: 2,
+        title: "HTML/CSS Basics",
+        description: "Basic web development concepts test",
+        duration: 20,
+        questions: [
+          {
+            id: 1,
+            text: "What does CSS stand for?",
+            type: "multiple",
+            options: [
+              "Computer Style Sheets",
+              "Creative Style System",
+              "Cascading Style Sheets",
+              "Colorful Style Sheets"
+            ],
+            correctAnswer: 2
+          }
+        ]
+      }
+    ];
+
+    // Initialize tests when page loads
+    function initializeTests() {
+      loadTests();
+    }
+
+    // Load tests into the UI
+    function loadTests() {
+      const container = document.getElementById('testsContainer');
+      container.innerHTML = '';
+
+      if (testsData.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center py-5"><h5>No tests created yet</h5></div>';
+        return;
+      }
+
+      testsData.forEach(test => {
+        const testCard = document.createElement('div');
+        testCard.className = 'col-md-6 mb-4';
+
+        testCard.innerHTML = `
+          <div class="kpi-card">
+            <h4>${test.title}</h4>
+            <p class="text-muted">${test.description}</p>
+            <div class="d-flex justify-content-between">
+              <span><i class="bi bi-clock"></i> ${test.duration} mins</span>
+              <span><i class="bi bi-question-circle"></i> ${test.questions.length} questions</span>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button class="btn btn-sm btn-outline-light" onclick="editTest(${test.id})">
+                <i class="bi bi-pencil"></i> Edit
+              </button>
+              <button class="btn btn-sm btn-outline-primary" onclick="assignTest(${test.id})">
+                <i class="bi bi-send"></i> Assign
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteTest(${test.id})">
+                <i class="bi bi-trash"></i> Delete
+              </button>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(testCard);
+      });
+    }
+
+    // Show add test modal
+    function showAddTestModal() {
+      document.getElementById('questionsContainer').innerHTML = '';
+      document.getElementById('testForm').reset();
+      const modal = new bootstrap.Modal(document.getElementById('addTestModal'));
+      modal.show();
+    }
+
+    // Add new question to the form
+    function addQuestion() {
+      const container = document.getElementById('questionsContainer');
+      const questionId = Date.now(); // Unique ID
+
+      const questionHTML = `
+        <div class="question-container mb-4" data-id="${questionId}">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6>Question</h6>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(${questionId})">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+          <div class="form-group mb-3">
+            <input type="text" class="form-control question-text" placeholder="Enter question" required>
+          </div>
+          <div class="form-group mb-3">
+            <select class="form-select question-type" onchange="changeQuestionType(${questionId}, this.value)">
+              <option value="multiple">Multiple Choice</option>
+              <option value="text">Text Answer</option>
+            </select>
+          </div>
+          <div class="options-container">
+            <div class="option-row">
+              <input type="radio" name="correct-${questionId}" class="me-2" value="0">
+              <input type="text" class="form-control option-input" placeholder="Option 1">
+              <button type="button" class="btn btn-sm btn-outline-light ms-2" onclick="addOption(${questionId})">
+                <i class="bi bi-plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', questionHTML);
+    }
+
+    // Change question type
+    function changeQuestionType(questionId, type) {
+      const container = document.querySelector(`.question-container[data-id="${questionId}"] .options-container`);
+      container.innerHTML = type === 'multiple' ? `
+        <div class="option-row">
+          <input type="radio" name="correct-${questionId}" class="me-2" value="0">
+          <input type="text" class="form-control option-input" placeholder="Option 1">
+          <button type="button" class="btn btn-sm btn-outline-light ms-2" onclick="addOption(${questionId})">
+            <i class="bi bi-plus"></i>
+          </button>
+        </div>
+      ` : '<p>Text answer - no options needed</p>';
+    }
+
+    // Add option to a question
+    function addOption(questionId) {
+      const container = document.querySelector(`.question-container[data-id="${questionId}"] .options-container`);
+      const optionCount = container.querySelectorAll('.option-row').length;
+
+      const optionHTML = `
+        <div class="option-row">
+          <input type="radio" name="correct-${questionId}" class="me-2" value="${optionCount}">
+          <input type="text" class="form-control option-input" placeholder="Option ${optionCount + 1}">
+          <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="removeOption(this)">
+            <i class="bi bi-dash"></i>
+          </button>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', optionHTML);
+    }
+
+    // Remove an option
+    function removeOption(button) {
+      button.closest('.option-row').remove();
+    }
+
+    // Remove a question
+    function removeQuestion(questionId) {
+      document.querySelector(`.question-container[data-id="${questionId}"]`).remove();
+    }
+
+    // Save test
+    function saveTest() {
+      const title = document.getElementById('testTitle').value;
+      const description = document.getElementById('testDescription').value;
+      const duration = document.getElementById('testDuration').value;
+
+      if (!title) {
+        showToast('Test title is required', 'error');
+        return;
+      }
+
+      const questions = [];
+      const questionContainers = document.querySelectorAll('.question-container');
+
+      questionContainers.forEach(container => {
+        const text = container.querySelector('.question-text').value;
+        const type = container.querySelector('.question-type').value;
+
+        if (!text) return;
+
+        const question = {
+          id: Date.now(),
+          text,
+          type
+        };
+
+        if (type === 'multiple') {
+          question.options = [];
+          question.correctAnswer = null;
+
+          container.querySelectorAll('.option-row').forEach((row, index) => {
+            const optionInput = row.querySelector('.option-input');
+            const optionValue = optionInput.value.trim();
+
+            if (optionValue) {
+              question.options.push(optionValue);
+
+              if (row.querySelector('input[type="radio"]:checked')) {
+                question.correctAnswer = index;
+              }
+            }
+          });
+
+          if (question.options.length < 2) {
+            showToast('Multiple choice questions need at least 2 options', 'error');
+            return;
+          }
+
+          if (question.correctAnswer === null) {
+            showToast('Please select a correct answer', 'error');
+            return;
+          }
+        }
+
+        questions.push(question);
+      });
+
+      if (questions.length === 0) {
+        showToast('Please add at least one question', 'error');
+        return;
+      }
+
+      const newTest = {
+        id: testsData.length + 1,
+        title,
+        description,
+        duration: parseInt(duration),
+        questions
+      };
+
+      testsData.push(newTest);
+
+      const modal = bootstrap.Modal.getInstance(document.getElementById('addTestModal'));
+      modal.hide();
+
+      loadTests();
+      showToast('Test created successfully', 'success');
+    }
+
+    // Edit test
+    function editTest(testId) {
+      const test = testsData.find(t => t.id === testId);
+      if (!test) return;
+
+      document.getElementById('testTitle').value = test.title;
+      document.getElementById('testDescription').value = test.description;
+      document.getElementById('testDuration').value = test.duration;
+
+      const questionsContainer = document.getElementById('questionsContainer');
+      questionsContainer.innerHTML = '';
+
+      test.questions.forEach(question => {
+        const questionId = Date.now();
+
+        let optionsHTML = '';
+        if (question.type === 'multiple') {
+          question.options.forEach((option, index) => {
+            optionsHTML += `
+              <div class="option-row">
+                <input type="radio" name="correct-${questionId}" class="me-2" 
+                      value="${index}" ${index === question.correctAnswer ? 'checked' : ''}>
+                <input type="text" class="form-control option-input" value="${option}">
+                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="removeOption(this)">
+                  <i class="bi bi-dash"></i>
+                </button>
+              </div>
+            `;
+          });
+
+          optionsHTML += `
+            <button type="button" class="btn btn-sm btn-outline-light mt-2" onclick="addOption(${questionId})">
+              <i class="bi bi-plus"></i> Add Option
+            </button>
+          `;
+        } else {
+          optionsHTML = '<p>Text answer - no options needed</p>';
+        }
+
+        const questionHTML = `
+          <div class="question-container mb-4" data-id="${questionId}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6>Question</h6>
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(${questionId})">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+            <div class="form-group mb-3">
+              <input type="text" class="form-control question-text" value="${question.text}" required>
+            </div>
+            <div class="form-group mb-3">
+              <select class="form-select question-type" onchange="changeQuestionType(${questionId}, this.value)">
+                <option value="multiple" ${question.type === 'multiple' ? 'selected' : ''}>Multiple Choice</option>
+                <option value="text" ${question.type === 'text' ? 'selected' : ''}>Text Answer</option>
+              </select>
+            </div>
+            <div class="options-container">
+              ${optionsHTML}
+            </div>
+          </div>
+        `;
+
+        questionsContainer.insertAdjacentHTML('beforeend', questionHTML);
+      });
+
+      const modal = new bootstrap.Modal(document.getElementById('addTestModal'));
+      modal.show();
+    }
+
+    // Assign test
+    function assignTest(testId) {
+      showToast(`Test ${testId} assigned to students`, 'success');
+    }
+
+    // Delete test
+    function deleteTest(testId) {
+      if (confirm('Are you sure you want to delete this test?')) {
+        testsData = testsData.filter(test => test.id !== testId);
+        loadTests();
+        showToast('Test deleted successfully', 'success');
+      }
+    }
+  </script>
+</body>
+
+</html>
