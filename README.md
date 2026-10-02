@@ -113,12 +113,14 @@ The collaborative effort and technical execution of this LMS resulted in our gro
 
 ## Screenshots
 
-*(Note: Replace the placeholder links below with actual images once added to the repository)*
-
-* **Student Portal** - `[Add screenshot path here: e.g., docs/student-dashboard.png]`
-* **Teacher Portal** - `[Add screenshot path here: e.g., docs/teacher-dashboard.png]`
-* **Exams Module** - `[Add screenshot path here: e.g., docs/exams-module.png]`
-* **Admin Dashboard** - `[Add screenshot path here: e.g., docs/admin-dashboard.png]`
+* **Student Portal**
+  ![Student Portal](docs/student-dashboard.png)
+* **Teacher Portal**
+  ![Teacher Portal](docs/teacher-dashboard.png)
+* **Exams Module**
+  ![Exams Module](docs/exams-module.png)
+* **Admin Dashboard**
+  ![Admin Dashboard](docs/admin-dashboard.png)
 
 ## Design & Engineering Notes
 
